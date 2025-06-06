@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Script Assistant - Marketing Video Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style id="app-style">
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+    }
+    
+    .chat-bubble {
+      position: relative;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      border-radius: 18px;
+      max-width: 80%;
+    }
+    
+    .chat-bubble.assistant {
+      background-color: #f0f7ff;
+      border-top-left-radius: 4px;
+      margin-right: auto;
+    }
+    
+    .chat-bubble.user {
+      background-color: #e9f7ef;
+      border-top-right-radius: 4px;
+      margin-left: auto;
+    }
+    
+    .input-field {
+      transition: all 0.3s ease;
+    }
+    
+    .input-field:focus-within {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    .script-idea {
+      transition: all 0.2s ease;
+    }
+    
+    .script-idea:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .feedback-highlight {
+      background-color: rgba(250, 204, 21, 0.2);
+      border-bottom: 2px solid #facc15;
+      padding: 0 2px;
+      cursor: pointer;
+    }
+    
+    .comment-bubble {
+      position: absolute;
+      background-color: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+      max-width: 250px;
+    }
+    
+    /* Loading States */
+    .loading-dots {
+      display: inline-flex;
+      align-items: center;
+    }
+    
+    .loading-dots span {
+      width: 8px;
+      height: 8px;
+      margin: 0 2px;
+      background-color: #3b82f6;
+      border-radius: 50%;
+      animation: dots 1.4s infinite ease-in-out both;
+    }
+    
+    .loading-dots span:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+    
+    .loading-dots span:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+    
+    @keyframes dots {
+      0%, 80%, 100% { 
+        transform: scale(0);
+      } 40% { 
+        transform: scale(1.0);
+      }
+    }
+    
+    /* Scroll styling */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+      padding: 2px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background-color: #f1f1f1;
+      border-radius: 10px;
+      margin: 4px 0;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #c1c1c1;
+      border-radius: 10px;
+      border: 1px solid #f1f1f1;
+    }
+    
+    /* Added for proper spacing in chat container */
+    #chat-messages {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      height: 100%;
+      overflow-y: auto;
+    }
+    
+    /* Ensure proper height computation for chat container */
+    .flex-1 {
+      min-height: 0;
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col">
+  <div class="container mx-auto p-4 max-w-6xl h-full flex flex-col">
+    <header class="py-4 mb-4">
+      <h1 class="text-2xl font-bold text-blue-600 flex items-center">
+        <i class="fas fa-video mr-2"></i> Script Assistant
+        <span class="text-sm font-normal text-gray-500 ml-2">Marketing Video Generator</span>
+      </h1>
+    </header>
+
+    <div class="flex-1 flex flex-col lg:flex-row gap-4 h-full">
+      <!-- Main content area -->
+      <div class="lg:w-3/4 flex flex-col">
+        <!-- Input Panel -->
+        <div class="bg-white rounded-lg shadow-md mb-4 overflow-hidden transition-all" id="input-panel">
+          <div class="px-4 py-3 bg-blue-50 flex justify-between items-center cursor-pointer" id="input-panel-header">
+            <h2 class="font-semibold text-blue-700">
+              <i class="fas fa-cog mr-2"></i> Script Configuration
+            </h2>
+            <button class="text-blue-600 hover:text-blue-800" id="toggle-panel">
+              <i class="fas fa-chevron-up" id="panel-icon"></i>
+            </button>
+          </div>
+          
+          <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4" id="input-panel-content">
+            <div class="input-field">
+              <label class="block text-sm font-medium text-gray-700 mb-1" for="keywords">Keywords</label>
+              <input type="text" id="keywords" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none" placeholder="e.g., eco-friendly, sustainable, organic">
+            </div>
+            
+            <div class="input-field">
+              <label class="block text-sm font-medium text-gray-700 mb-1" for="target-audience">Target Audience</label>
+              <input type="text" id="target-audience" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none" placeholder="e.g., millennials, young professionals, parents">
+            </div>
+            
+            <div class="input-field md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1" for="product-description">Product Description</label>
+              <textarea id="product-description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none" placeholder="Briefly describe your product or service..."></textarea>
+            </div>
+            
+            <div class="input-field">
+              <label class="block text-sm font-medium text-gray-700 mb-1" for="script-template">Script Template</label>
+              <select id="script-template" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none">
+                <option value="" disabled selected>Select a template</option>
+                <option value="problem-solution">Problem-Solution</option>
+                <option value="storytelling">Storytelling</option>
+                <option value="testimonial">Testimonial</option>
+                <option value="demo">Product Demo</option>
+                <option value="how-to">How-To</option>
+              </select>
+            </div>
+            
+            <div class="md:col-span-2 flex justify-end mt-2">
+              <button id="generate-ideas-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                <i class="fas fa-lightbulb mr-2"></i> Generate Ideas
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Chat Window -->
+        <div class="flex-1 bg-white rounded-lg shadow-md flex flex-col overflow-hidden">
+          <div class="px-4 py-3 bg-gray-50 border-b">
+            <h2 class="font-semibold">
+              <i class="fas fa-comments mr-2 text-blue-600"></i> Script Assistant Chat
+            </h2>
+          </div>
+          
+          <div id="chat-messages" class="flex-1 p-4 overflow-y-auto custom-scrollbar">
+            <!-- Welcome message -->
+            <div class="chat-bubble assistant">
+              <p class="mb-1 font-medium text-blue-700">Script Assistant</p>
+              <p>Welcome to Script Assistant! I'm here to help you create compelling scripts for your marketing videos and social media content. Start by filling out the configuration panel above, then click "Generate Ideas" to begin.</p>
+            </div>
+          </div>
+          
+          <div id="script-ideas-container" class="hidden p-4 border-t">
+            <h3 class="font-medium mb-3 text-gray-700">Select a script idea to expand:</h3>
+            <div id="script-ideas-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <!-- Script ideas will be inserted here -->
+            </div>
+          </div>
+          
+          <div id="script-draft-container" class="hidden p-4 border-t">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="font-medium text-gray-700">Full Script Draft</h3>
+              <div class="flex space-x-2">
+                <button id="edit-draft-btn" class="px-2 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors">
+                  <i class="fas fa-edit mr-1"></i> Edit
+                </button>
+                <button id="download-draft-btn" class="px-2 py-1 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors">
+                  <i class="fas fa-download mr-1"></i> Download
+                </button>
+              </div>
+            </div>
+            <div id="script-draft-content" class="bg-gray-50 p-4 rounded-md border border-gray-200">
+              <!-- Script draft will be inserted here -->
+            </div>
+          </div>
+          
+          <!-- Chat Input -->
+          <div class="p-3 border-t flex">
+            <input type="text" id="chat-input" placeholder="Ask a question or provide feedback..." class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+            <button id="send-message-btn" class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition-colors">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Analytics Bar -->
+        <div class="bg-white rounded-lg shadow-md mt-4 overflow-hidden" id="analytics-bar">
+          <div class="px-4 py-3 bg-gray-50 flex justify-between items-center cursor-pointer" id="analytics-header">
+            <h2 class="font-semibold text-gray-700">
+              <i class="fas fa-chart-line mr-2 text-blue-600"></i> Performance Metrics
+            </h2>
+            <button class="text-blue-600 hover:text-blue-800" id="toggle-analytics">
+              <i class="fas fa-chevron-down" id="analytics-icon"></i>
+            </button>
+          </div>
+          
+          <div class="p-4 hidden" id="analytics-content">
+            <div class="text-center py-8 text-gray-500">
+              <i class="fas fa-chart-bar text-3xl mb-2"></i>
+              <p>Connect your accounts to view performance metrics for your scripts.</p>
+              <button class="mt-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-md font-medium hover:bg-blue-100 transition-colors">
+                <i class="fas fa-link mr-1"></i> Connect Accounts
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Side Panel -->
+      <div class="lg:w-1/4">
+        <div class="bg-white rounded-lg shadow-md h-full flex flex-col">
+          <div class="px-4 py-3 bg-blue-50 border-b">
+            <h2 class="font-semibold text-blue-700">
+              <i class="fas fa-book mr-2"></i> Script Library
+            </h2>
+          </div>
+          
+          <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
+            <div class="mb-4">
+              <input type="text" placeholder="Search library..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none">
+            </div>
+            
+            <div class="space-y-3">
+              <div class="p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
+                <h3 class="font-medium text-gray-800">Problem-Solution</h3>
+                <p class="text-sm text-gray-600 mt-1">Present a problem and demonstrate how your product solves it.</p>
+              </div>
+              
+              <div class="p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
+                <h3 class="font-medium text-gray-800">Storytelling</h3>
+                <p class="text-sm text-gray-600 mt-1">Engage viewers with a narrative that connects emotionally.</p>
+              </div>
+              
+              <div class="p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
+                <h3 class="font-medium text-gray-800">Testimonial</h3>
+                <p class="text-sm text-gray-600 mt-1">Feature customers sharing their positive experiences.</p>
+              </div>
+              
+              <div class="p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
+                <h3 class="font-medium text-gray-800">Product Demo</h3>
+                <p class="text-sm text-gray-600 mt-1">Showcase your product's features and benefits in action.</p>
+              </div>
+              
+              <div class="p-3 bg-gray-50 rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
+                <h3 class="font-medium text-gray-800">How-To</h3>
+                <p class="text-sm text-gray-600 mt-1">Educational content that shows viewers how to solve a problem.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 border-t">
+            <button id="start-over-btn" class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 transition-colors">
+              <i class="fas fa-redo-alt mr-2"></i> Start Over
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script id="app-script">
+    document.addEventListener('DOMContentLoaded', function() {
+      // Elements
+      const inputPanel = document.getElementById('input-panel');
+      const inputPanelHeader = document.getElementById('input-panel-header');
+      const inputPanelContent = document.getElementById('input-panel-content');
+      const togglePanelBtn = document.getElementById('toggle-panel');
+      const panelIcon = document.getElementById('panel-icon');
+      
+      const analyticsBar = document.getElementById('analytics-bar');
+      const analyticsHeader = document.getElementById('analytics-header');
+      const analyticsContent = document.getElementById('analytics-content');
+      const toggleAnalyticsBtn = document.getElementById('toggle-analytics');
+      const analyticsIcon = document.getElementById('analytics-icon');
+      
+      const generateIdeasBtn = document.getElementById('generate-ideas-btn');
+      const chatMessages = document.getElementById('chat-messages');
+      const chatInput = document.getElementById('chat-input');
+      const sendMessageBtn = document.getElementById('send-message-btn');
+      
+      const scriptIdeasContainer = document.getElementById('script-ideas-container');
+      const scriptIdeasList = document.getElementById('script-ideas-list');
+      const scriptDraftContainer = document.getElementById('script-draft-container');
+      const scriptDraftContent = document.getElementById('script-draft-content');
+      
+      const startOverBtn = document.getElementById('start-over-btn');
+      const editDraftBtn = document.getElementById('edit-draft-btn');
+      const downloadDraftBtn = document.getElementById('download-draft-btn');
+      
+      // Form elements
+      const keywordsInput = document.getElementById('keywords');
+      const targetAudienceInput = document.getElementById('target-audience');
+      const productDescriptionInput = document.getElementById('product-description');
+      const scriptTemplateSelect = document.getElementById('script-template');
+      
+      // Toggle Input Panel
+      togglePanelBtn.addEventListener('click', function() {
+        inputPanelContent.classList.toggle('hidden');
+        if (inputPanelContent.classList.contains('hidden')) {
+          panelIcon.classList.remove('fa-chevron-up');
+          panelIcon.classList.add('fa-chevron-down');
+        } else {
+          panelIcon.classList.remove('fa-chevron-down');
+          panelIcon.classList.add('fa-chevron-up');
+        }
+      });
+      
+      // Toggle Analytics Bar
+      toggleAnalyticsBtn.addEventListener('click', function() {
+        analyticsContent.classList.toggle('hidden');
+        if (analyticsContent.classList.contains('hidden')) {
+          analyticsIcon.classList.remove('fa-chevron-up');
+          analyticsIcon.classList.add('fa-chevron-down');
+        } else {
+          analyticsIcon.classList.remove('fa-chevron-down');
+          analyticsIcon.classList.add('fa-chevron-up');
+        }
+      });
+      
+      // Check if form inputs are filled to enable Generate Ideas button
+      function checkFormInputs() {
+        const keywords = keywordsInput.value.trim();
+        const targetAudience = targetAudienceInput.value.trim();
+        const productDescription = productDescriptionInput.value.trim();
+        const scriptTemplate = scriptTemplateSelect.value;
+        
+        if (keywords && targetAudience && productDescription && scriptTemplate) {
+          generateIdeasBtn.disabled = false;
+        } else {
+          generateIdeasBtn.disabled = true;
+        }
+      }
+      
+      // Add event listeners to form inputs
+      keywordsInput.addEventListener('input', checkFormInputs);
+      targetAudienceInput.addEventListener('input', checkFormInputs);
+      productDescriptionInput.addEventListener('input', checkFormInputs);
+      scriptTemplateSelect.addEventListener('change', checkFormInputs);
+      
+      // Add a message to the chat
+      function addMessage(sender, message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `chat-bubble ${sender}`;
+        
+        let senderName = sender === 'assistant' ? 'Script Assistant' : 'You';
+        const senderClass = sender === 'assistant' ? 'text-blue-700' : 'text-green-700';
+        
+        messageElement.innerHTML = `
+          <p class="mb-1 font-medium ${senderClass}">${senderName}</p>
+          <p>${message}</p>
+        `;
+        
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      
+      // Show loading indicator
+      function showLoading() {
+        const loadingElement = document.createElement('div');
+        loadingElement.className = 'chat-bubble assistant loading';
+        loadingElement.innerHTML = `
+          <p class="mb-1 font-medium text-blue-700">Script Assistant</p>
+          <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        `;
+        chatMessages.appendChild(loadingElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return loadingElement;
+      }
+      
+      // Generate script ideas
+      generateIdeasBtn.addEventListener('click', function() {
+        // Get input values
+        const keywords = keywordsInput.value.trim();
+        const targetAudience = targetAudienceInput.value.trim();
+        const productDescription = productDescriptionInput.value.trim();
+        const scriptTemplate = scriptTemplateSelect.value;
+        
+        // Add user message
+        addMessage('user', `I want to create a ${scriptTemplate} script for my product targeting ${targetAudience} with keywords: ${keywords}`);
+        
+        // Show loading
+        const loadingElement = showLoading();
+        
+        // Simulate API call
+        setTimeout(() => {
+          // Remove loading indicator
+          loadingElement.remove();
+          
+          // Add assistant response
+          addMessage('assistant', `I've generated some script ideas based on your ${scriptTemplate} template for ${targetAudience}. Here are a few options you might like:`);
+          
+          // Show script ideas
+          scriptIdeasContainer.classList.remove('hidden');
+          scriptDraftContainer.classList.add('hidden');
+          
+          // Generate script ideas based on template
+          let ideas = [];
+          
+          switch(scriptTemplate) {
+            case 'problem-solution':
+              ideas = [
+                { title: "Daily Struggle", description: "Highlight the daily challenges faced by your audience and reveal your product as the solution." },
+                { title: "Before & After", description: "Show the contrast between life before your product and how much better it is after." },
+                { title: "Expert Solution", description: "Position your product as the expert-recommended solution to a common problem." }
+              ];
+              break;
+            case 'storytelling':
+              ideas = [
+                { title: "Customer Journey", description: "Tell the story of how a typical customer discovered and benefited from your product." },
+                { title: "Brand Origin", description: "Share the inspiration behind your product and how it was developed to help others." },
+                { title: "Day in the Life", description: "Show how your product seamlessly integrates into and improves your customer's daily routine." }
+              ];
+              break;
+            case 'testimonial':
+              ideas = [
+                { title: "Success Stories", description: "Feature multiple brief testimonials highlighting different benefits of your product." },
+                { title: "Transformation Story", description: "Focus on one customer's complete journey and transformation using your product." },
+                { title: "Expert Endorsement", description: "Showcase industry experts or influencers vouching for your product's effectiveness." }
+              ];
+              break;
+            case 'demo':
+              ideas = [
+                { title: "Feature Showcase", description: "Demonstrate the key features that set your product apart from competitors." },
+                { title: "How-It-Works", description: "Break down the technical aspects of your product in a simple, visual way." },
+                { title: "Real-World Application", description: "Show your product being used in various real-life scenarios relevant to your audience." }
+              ];
+              break;
+            case 'how-to':
+              ideas = [
+                { title: "Quick Start Guide", description: "A concise tutorial showing how to get started with your product in minutes." },
+                { title: "Problem-Solving Tutorial", description: "Walk through how your product solves a specific pain point step by step." },
+                { title: "Tips & Tricks", description: "Share insider knowledge about maximizing the benefits of your product." }
+              ];
+              break;
+          }
+          
+          // Populate script ideas
+          scriptIdeasList.innerHTML = '';
+          ideas.forEach((idea, index) => {
+            const ideaElement = document.createElement('div');
+            ideaElement.className = 'script-idea p-3 bg-gray-50 border border-gray-200 rounded-md cursor-pointer hover:bg-blue-50 hover:border-blue-200';
+            ideaElement.innerHTML = `
+              <h3 class="font-medium text-gray-800">${idea.title}</h3>
+              <p class="text-sm text-gray-600 mt-1">${idea.description}</p>
+            `;
+            
+            // Add click event to select this idea
+            ideaElement.addEventListener('click', function() {
+              selectScriptIdea(idea, index);
+            });
+            
+            scriptIdeasList.appendChild(ideaElement);
+          });
+        }, 2000);
+      });
+      
+      // Select a script idea to expand into full draft
+      function selectScriptIdea(idea, index) {
+        // Add user message
+        addMessage('user', `I'd like to develop the "${idea.title}" script idea.`);
+        
+        // Show loading
+        const loadingElement = showLoading();
+        
+        // Simulate API call
+        setTimeout(() => {
+          // Remove loading indicator
+          loadingElement.remove();
+          
+          // Add assistant response
+          addMessage('assistant', `Great choice! I've expanded the "${idea.title}" idea into a full script draft based on your product description and target audience. Feel free to review and suggest any changes.`);
+          
+          // Hide script ideas, show draft
+          scriptIdeasContainer.classList.add('hidden');
+          scriptDraftContainer.classList.remove('hidden');
+          
+          // Generate script draft based on template and idea
+          const keywords = keywordsInput.value.trim();
+          const targetAudience = targetAudienceInput.value.trim();
+          const productDescription = productDescriptionInput.value.trim();
+          const scriptTemplate = scriptTemplateSelect.value;
+          
+          // Sample draft content with feedback highlights
+          scriptDraftContent.innerHTML = `
+            <h2 class="font-bold mb-3">${idea.title} - ${scriptTemplate.charAt(0).toUpperCase() + scriptTemplate.slice(1)} Script</h2>
+            
+            <div class="mb-4">
+              <span class="text-sm text-gray-500 uppercase">INTRO (0:00-0:10)</span>
+              <p class="mt-1">Have you ever struggled with <span class="feedback-highlight" data-comment="Consider specifying a more concrete problem related to your product">finding the right solution</span> for your needs? You're not alone.</p>
+            </div>
+            
+            <div class="mb-4">
+              <span class="text-sm text-gray-500 uppercase">PROBLEM (0:10-0:30)</span>
+              <p class="mt-1">Many ${targetAudience} face challenges like <span class="feedback-highlight" data-comment="Add statistics here if available">wasted time, inefficiency, and frustration</span> when dealing with traditional options. The market is full of products that promise results but fall short on delivery.</p>
+            </div>
+            
+            <div class="mb-4">
+              <span class="text-sm text-gray-500 uppercase">SOLUTION (0:30-0:50)</span>
+              <p class="mt-1">Introducing our <span class="feedback-highlight" data-comment="Add your product name here">[Product Name]</span>, designed specifically with ${targetAudience} in mind. Unlike other options, our solution is <span class="feedback-highlight" data-comment="Insert your key differentiators">innovative, effective, and user-friendly</span>.</p>
+            </div>
+            
+            <div class="mb-4">
+              <span class="text-sm text-gray-500 uppercase">FEATURES & BENEFITS (0:50-1:20)</span>
+              <p class="mt-1">${productDescription} Our product delivers on the promise of ${keywords}.</p>
+            </div>
+            
+            <div class="mb-4">
+              <span class="text-sm text-gray-500 uppercase">CALL TO ACTION (1:20-1:30)</span>
+              <p class="mt-1">Don't wait any longer to transform your experience. Visit <span class="feedback-highlight" data-comment="Add your website or contact information">our website</span> today to learn more and get started with your journey to better results.</p>
+            </div>
+          `;
+          
+          // Add event listeners to feedback highlights
+          document.querySelectorAll('.feedback-highlight').forEach(highlight => {
+            highlight.addEventListener('click', function() {
+              const comment = this.getAttribute('data-comment');
+              toggleComment(this, comment);
+            });
+          });
+        }, 2500);
+      }
+      
+      // Toggle comment bubble for feedback highlights
+      function toggleComment(element, comment) {
+        // Remove any existing comment bubbles
+        document.querySelectorAll('.comment-bubble').forEach(bubble => bubble.remove());
+        
+        // Create comment bubble
+        const commentBubble = document.createElement('div');
+        commentBubble.className = 'comment-bubble';
+        commentBubble.textContent = comment;
+        
+        // Position bubble near the element
+        const rect = element.getBoundingClientRect();
+        commentBubble.style.top = `${rect.bottom + window.scrollY + 10}px`;
+        commentBubble.style.left = `${rect.left + window.scrollX}px`;
+        
+        // Add close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'absolute top-1 right-1 text-gray-400 hover:text-gray-600';
+        closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        closeBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          commentBubble.remove();
+        });
+        
+        commentBubble.appendChild(closeBtn);
+        document.body.appendChild(commentBubble);
+        
+        // Close when clicking outside
+        document.addEventListener('click', function closeComment(e) {
+          if (!commentBubble.contains(e.target) && !element.contains(e.target)) {
+            commentBubble.remove();
+            document.removeEventListener('click', closeComment);
+          }
+        });
+      }
+      
+      // Send message from chat input
+      sendMessageBtn.addEventListener('click', function() {
+        const message = chatInput.value.trim();
+        if (message) {
+          addMessage('user', message);
+          chatInput.value = '';
+          
+          // Show loading
+          const loadingElement = showLoading();
+          
+          // Simulate API response
+          setTimeout(() => {
+            loadingElement.remove();
+            addMessage('assistant', "I understand your feedback. The script is just a starting point - let me know if you'd like to make specific changes to any section, and I can help refine it to better match your vision.");
+          }, 1500);
+        }
+      });
+      
+      // Also allow Enter key to send message
+      chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          sendMessageBtn.click();
+        }
+      });
+      
+      // Start over button
+      startOverBtn.addEventListener('click', function() {
+        // Clear inputs
+        keywordsInput.value = '';
+        targetAudienceInput.value = '';
+        productDescriptionInput.value = '';
+        scriptTemplateSelect.value = '';
+        
+        // Reset UI
+        generateIdeasBtn.disabled = true;
+        chatMessages.innerHTML = '';
+        scriptIdeasContainer.classList.add('hidden');
+        scriptDraftContainer.classList.add('hidden');
+        
+        // Add welcome message
+        addMessage('assistant', "Welcome to Script Assistant! I'm here to help you create compelling scripts for your marketing videos and social media content. Start by filling out the configuration panel above, then click \"Generate Ideas\" to begin.");
+        
+        // Show input panel if hidden
+        if (inputPanelContent.classList.contains('hidden')) {
+          togglePanelBtn.click();
+        }
+      });
+      
+      // Download draft button
+      downloadDraftBtn.addEventListener('click', function() {
+        alert("In the full version, this would download a formatted script document.");
+      });
+      
+      // Edit draft button
+      editDraftBtn.addEventListener('click', function() {
+        addMessage('user', "I'd like to make some edits to this script.");
+        
+        // Show loading
+        const loadingElement = showLoading();
+        
+        // Simulate API response
+        setTimeout(() => {
+          loadingElement.remove();
+          addMessage('assistant', "Sure! You can click on any highlighted text to see suggestions, or tell me which specific sections you'd like to modify. What changes would you like to make?");
+        }, 1500);
+      });
+    });
+  </script>
+</body>
+</html>
